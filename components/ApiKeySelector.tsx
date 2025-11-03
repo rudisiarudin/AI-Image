@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-// FIX: Defined an interface for aistudio to resolve the type conflict.
-interface AIStudio {
-    hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<void>;
-}
-
+// FIX: Inlined the type for `window.aistudio` to resolve a subsequent property declaration error.
+// This avoids a naming conflict with another possible 'AIStudio' interface definition.
 declare global {
     interface Window {
-        aistudio?: AIStudio;
+        aistudio?: {
+            hasSelectedApiKey: () => Promise<boolean>;
+            openSelectKey: () => Promise<void>;
+        };
     }
 }
 

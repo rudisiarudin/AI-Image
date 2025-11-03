@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { STYLE_CATEGORIES, RECOMMENDED_STYLES, ASPECT_RATIOS, CUSTOM_STYLES, LIPSTICK_COLORS, IDOL_POSE_TEMPLATES, SHOT_STYLE_TEMPLATES, LIGHT_STYLE_TEMPLATES, SWIMWEAR_POSE_TEMPLATES, SOCCER_POSE_TEMPLATES, SBD_SHOT_STYLE_TEMPLATES, SBD_LIGHT_STYLE_TEMPLATES, MALE_HAIRSTYLE_TEMPLATES, FEMALE_HAIRSTYLE_TEMPLATES } from '../constants';
 import { improvePrompt, improveIdolPrompt, improveMultiImagePrompt, improveVideoPrompt, translateText } from '../services/geminiService';
