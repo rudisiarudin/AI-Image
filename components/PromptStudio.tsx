@@ -65,7 +65,7 @@ const SpinnerIcon: React.FC = () => (
 );
 
 
-export const PromptStudio: React.FC<PromptStudioProps> = ({ onGenerate, isLoading, accessType }) => {
+export const PromptStudio: React.FC<PromptStudioProps> = ({ onGenerate, isLoading }) => {
     const [activeTab, setActiveTab] = useState<'manual' | 'rekomendasi' | 'kustom'>('manual');
     
     const [mainSubject, setMainSubject] = useState<string>('Seekor kucing astronot yang agung duduk di atas bulan, memandangi galaksi nebula');

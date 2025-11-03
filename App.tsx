@@ -1,77 +1,125 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
-import PinAccess from './components/PinAccess';
 import ApiKeyInput from './components/ApiKeyInput';
-// FIX: Changed import for PromptStudio to a named import to resolve module error.
 import { PromptStudio } from './components/PromptStudio';
 import ImageDisplay from './components/ImageDisplay';
 import BottomNavBar from './components/BottomNavBar';
 import * as geminiService from './services/geminiService';
 import type { ImageFile } from './types';
 
+// Deklarasikan objek google global untuk menghindari error TypeScript
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 const App: React.FC = () => {
+    const [googleUser, setGoogleUser] = useState<any | null>(null);
+    const [isGsiLoaded, setIsGsiLoaded] = useState(false);
     const [isApiKeyProvided, setIsApiKeyProvided] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [accessType, setAccessType] = useState<string | null>(null);
-    const [remainingTime, setRemainingTime] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [generatedImage, setGeneratedImage] = useState<ImageFile | null>(null);
     const [generatedText, setGeneratedText] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'generator' | 'result'>('generator');
 
+    // Efek untuk menginisialisasi GSI dan memeriksa login/kunci yang ada
     useEffect(() => {
-        const key = sessionStorage.getItem('gemini_api_key');
-        if (key && key.trim() !== '') {
-            setIsApiKeyProvided(true);
+        // Cek pengguna yang tersimpan di sessionStorage saat load awal
+        const storedUser = sessionStorage.getItem('google_user');
+        if (storedUser) {
+            setGoogleUser(JSON.parse(storedUser));
         }
+
+        // Muat skrip GSI
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => setIsGsiLoaded(true);
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
     }, []);
 
-    const ACCESS_PINS: { [key: string]: { type: string, duration?: number } } = {
-        '1122': { type: 'permanent' },
-        '24': { type: 'timed', duration: 3600 } // 1 hour
+    // Cek kunci API setelah pengguna berhasil login
+    useEffect(() => {
+        if (googleUser) {
+            const key = localStorage.getItem('gemini_api_key');
+            if (key && key.trim() !== '') {
+                setIsApiKeyProvided(true);
+            }
+        }
+    }, [googleUser]);
+
+    const handleCredentialResponse = (response: any) => {
+        try {
+            const credential = response.credential;
+            const payloadBase64 = credential.split('.')[1];
+            const decodedPayload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+            
+            const userObject = {
+                name: decodedPayload.name,
+                email: decodedPayload.email,
+                picture: decodedPayload.picture,
+            };
+            
+            setGoogleUser(userObject);
+            // Simpan profil pengguna di sessionStorage agar terhapus saat browser ditutup
+            sessionStorage.setItem('google_user', JSON.stringify(userObject));
+        } catch (e) {
+            console.error("Error decoding JWT", e);
+            setError("Gagal memproses login Google.");
+        }
     };
+    
+    useEffect(() => {
+        if (isGsiLoaded && !googleUser) {
+            window.google.accounts.id.initialize({
+                // PENTING: Ganti dengan Google Client ID Anda yang sebenarnya
+                client_id: 'MASUKKAN_GOOGLE_CLIENT_ID_ANDA_DISINI.apps.googleusercontent.com',
+                callback: handleCredentialResponse,
+            });
+            
+            const googleButtonContainer = document.getElementById('google-signin-button');
+            if (googleButtonContainer) {
+                 window.google.accounts.id.renderButton(
+                    googleButtonContainer,
+                    { theme: 'outline', size: 'large', type: 'standard', text: 'signin_with', shape: 'pill' }
+                );
+            }
+        }
+    }, [isGsiLoaded, googleUser]);
     
     const handleKeyProvided = () => {
         setIsApiKeyProvided(true);
     };
 
-    const handleUnlock = (pin: string): boolean => {
-        const access = ACCESS_PINS[pin];
-        if (access) {
-            setIsAuthenticated(true);
-            setAccessType(access.type);
-            if (access.type === 'timed' && access.duration) {
-                setRemainingTime(access.duration);
-            }
-            return true;
+    const handleLogout = () => {
+        setGoogleUser(null);
+        setIsApiKeyProvided(false);
+        setGeneratedImage(null);
+        setGeneratedText(null);
+        setError(null);
+        setActiveView('generator');
+        
+        sessionStorage.removeItem('google_user');
+        localStorage.removeItem('gemini_api_key');
+
+        if (window.google && window.google.accounts.id) {
+            window.google.accounts.id.disableAutoSelect();
         }
-        return false;
     };
-
-    const handleLock = () => {
-        setIsAuthenticated(false);
-        setAccessType(null);
-        setRemainingTime(null);
+    
+    const handleResetApiKey = () => {
+        localStorage.removeItem('gemini_api_key');
+        setIsApiKeyProvided(false);
+        setError('QUOTA_ERROR:Kunci API telah dihapus. Silakan masukkan kunci yang baru.');
+        setActiveView('generator');
     };
-
-    useEffect(() => {
-        let timer: ReturnType<typeof setInterval>;
-        if (accessType === 'timed' && remainingTime !== null && remainingTime > 0) {
-            timer = setInterval(() => {
-                setRemainingTime(prev => {
-                    if (prev !== null && prev > 1) {
-                        return prev - 1;
-                    } else {
-                        handleLock();
-                        return 0;
-                    }
-                });
-            }, 1000);
-        }
-        return () => clearInterval(timer);
-    }, [accessType, remainingTime]);
-
 
     const handleGenerate = useCallback(async (options: any) => {
         if (isLoading) return;
@@ -180,21 +228,18 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
 
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Terjadi kesalahan.';
-             if (errorMessage.includes('API key not valid') || 
-                errorMessage.includes('API key is invalid') ||
-                errorMessage.includes('API_KEY_INVALID') ||
-                errorMessage.includes('Requested entity was not found.') ||
-                errorMessage.includes('permission to access')) {
-                setError('Kunci API tidak valid atau tidak ditemukan. Silakan muat ulang halaman dan masukkan kunci yang benar.');
-                sessionStorage.removeItem('gemini_api_key');
-                setIsApiKeyProvided(false);
-            } else if (errorMessage.includes('Kunci API tidak ditemukan')) {
-                setError('Sesi kunci API Anda telah berakhir. Silakan muat ulang halaman dan masukkan kembali kunci Anda.');
-                setIsApiKeyProvided(false);
-            } else if (errorMessage.includes('Batas penggunaan API telah tercapai')) {
-                setError('Batas penggunaan API untuk kunci ini telah tercapai. Silakan masukkan kunci API lain atau coba lagi nanti.');
-                sessionStorage.removeItem('gemini_api_key');
-                setIsApiKeyProvided(false);
+            const lowerCaseError = errorMessage.toLowerCase();
+
+            if (lowerCaseError.includes('api key not valid') || 
+                lowerCaseError.includes('api key is invalid') ||
+                lowerCaseError.includes('api_key_invalid') ||
+                lowerCaseError.includes('requested entity was not found') ||
+                lowerCaseError.includes('permission to access')) {
+                setError('QUOTA_ERROR:Kunci API tidak valid atau telah dicabut. Silakan masukkan kunci yang lain.');
+            } else if (lowerCaseError.includes('kunci api tidak ditemukan')) {
+                 setError('QUOTA_ERROR:Sesi kunci API Anda telah berakhir. Silakan masukkan kembali kunci Anda.');
+            } else if (lowerCaseError.includes('batas penggunaan') || lowerCaseError.includes('quota')) {
+                setError('QUOTA_ERROR:Batas penggunaan API untuk kunci ini telah tercapai. Silakan ganti dengan kunci API yang lain.');
             }
             else {
                 setError(errorMessage);
@@ -204,24 +249,39 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
         }
     }, [isLoading]);
     
-    if (!isApiKeyProvided) {
-        // Pass the error to the ApiKeyInput component to display, if it exists
-        return <ApiKeyInput onKeyProvided={handleKeyProvided} />;
+    if (!googleUser) {
+        return (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="w-full max-w-sm bg-surface p-8 rounded-2xl shadow-lg border border-border-color shadow-black/30">
+                <div className="text-center">
+                    <h1 className="text-2xl font-semibold text-primary-text">
+                        IT Palugada - <span className="text-accent-blue">AI Studio</span>
+                    </h1>
+                    <p className="text-secondary-text mt-2 text-sm">Silakan login dengan akun Google untuk melanjutkan.</p>
+                </div>
+                <div className="mt-8 flex justify-center">
+                  <div id="google-signin-button"></div>
+                </div>
+                {!isGsiLoaded && <p className="text-center text-secondary-text text-xs mt-4">Memuat tombol login...</p>}
+                {error && <p className="text-error-red text-sm text-center mt-4">{error}</p>}
+              </div>
+            </div>
+        );
     }
 
-    if (!isAuthenticated) {
-        return <PinAccess onUnlock={handleUnlock} />;
+    if (!isApiKeyProvided) {
+        return <ApiKeyInput onKeyProvided={handleKeyProvided} />;
     }
 
     return (
         <div className="bg-background text-primary-text h-screen font-sans flex flex-col">
-            <Header onLock={handleLock} remainingTime={remainingTime} />
+            <Header onLogout={handleLogout} googleUser={googleUser} />
             <main className="flex-grow container mx-auto p-4 md:p-6 pb-24 overflow-y-auto">
                  <div className={`${activeView === 'generator' ? 'block' : 'hidden'} h-full`}>
                     <PromptStudio 
                         onGenerate={handleGenerate} 
                         isLoading={isLoading}
-                        accessType={accessType}
+                        accessType={null}
                     />
                 </div>
                  <div className={`${activeView === 'result' ? 'block' : 'hidden'} h-full`}>
@@ -230,6 +290,7 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
                         text={generatedText}
                         isLoading={isLoading} 
                         error={error} 
+                        onResetApiKey={handleResetApiKey}
                     />
                 </div>
             </main>

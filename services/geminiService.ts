@@ -1,24 +1,62 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import type { AspectRatio, FashionImages, ImageFile, PhotoWithIdolOptions, SemuaBisaDisiniOptions, SoccerPlayerOptions, SwimwearModelOptions } from '../types';
 
-// Helper to get the API key from session storage.
+// Helper to get the API key from local storage.
 const getApiKey = (): string => {
-    const key = sessionStorage.getItem('gemini_api_key');
+    const key = localStorage.getItem('gemini_api_key');
     if (!key || key.trim() === '') {
         // This will be caught by the App component and will reset the UI state.
-        throw new Error('Kunci API tidak ditemukan di sesi. Silakan masukkan kunci API Anda.');
+        throw new Error('Kunci API tidak ditemukan. Silakan masukkan kunci API Anda.');
     }
     return key;
 };
 
 // Helper to get a new AI client instance.
-// This now reads the key from session storage.
+// This now reads the key from local storage.
 const getAiClient = () => {
     const apiKey = getApiKey();
     if (!apiKey) {
       throw new Error("An API Key must be set when running in a browser");
     }
     return new GoogleGenAI({ apiKey });
+};
+
+/**
+ * Verifies if an API key is valid and not rate-limited by making a lightweight IMAGE call.
+ * Throws specific, user-friendly errors on failure.
+ */
+export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
+    if (!apiKey || apiKey.trim() === '') {
+        throw new Error("Kunci API tidak boleh kosong.");
+    }
+    const tempAi = new GoogleGenAI({ apiKey });
+    try {
+        // Use the image model for verification to check image generation quota.
+        await tempAi.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [
+                    { text: 'a small blue dot' }, // A very simple, low-cost prompt
+                ],
+            },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+        return true; // Key is valid and working for image generation.
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('api key not valid') || msg.includes('api key is invalid') || msg.includes('api_key_invalid')) {
+                throw new Error("Kunci API yang Anda masukkan tidak valid. Silakan periksa kembali.");
+            }
+            if (msg.includes('resource_exhausted') || msg.includes('429') || msg.includes('quota')) {
+                throw new Error("Verifikasi gagal: Batas penggunaan untuk kunci API yang baru Anda masukkan ini telah tercapai. Coba kunci lain.");
+            }
+        }
+        // For other errors (network, etc.)
+        throw new Error("Verifikasi gagal. Periksa koneksi internet atau coba kunci lain.");
+    }
 };
 
 const ULTRA_PRECISE_FACE_LOCK_PROMPT = `**CRITICAL DIRECTIVE: FACE LOCK PROTOCOL V2 - ABSOLUTE PRIORITY**
@@ -50,11 +88,12 @@ const ULTRA_PRECISE_FACE_LOCK_PROMPT = `**CRITICAL DIRECTIVE: FACE LOCK PROTOCOL
 // Helper function to handle potential API errors, especially rate limiting.
 const handleGeminiError = (error: unknown): string => {
     if (error instanceof Error) {
+        const lowerCaseMessage = error.message.toLowerCase();
         // Check for specific error status or message for rate limiting
-        if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('429')) {
+        if (lowerCaseMessage.includes('resource_exhausted') || lowerCaseMessage.includes('429') || lowerCaseMessage.includes('quota')) {
             return "Batas penggunaan API telah tercapai. Ini adalah batasan dari paket gratis. Silakan coba lagi nanti.";
         }
-         if (error.message.includes('billed users')) {
+         if (lowerCaseMessage.includes('billed users')) {
             return "Model API yang diminta hanya tersedia untuk akun dengan penagihan aktif. Silakan periksa pengaturan akun Google Cloud Anda.";
         }
         return error.message;

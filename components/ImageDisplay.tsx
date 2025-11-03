@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Spinner from './Spinner';
 import type { ImageFile } from '../types';
@@ -8,6 +7,7 @@ interface ImageDisplayProps {
     text: string | null;
     isLoading: boolean;
     error: string | null;
+    onResetApiKey: () => void;
 }
 
 const DownloadIcon: React.FC<{className?: string}> = ({className}) => (
@@ -29,7 +29,7 @@ const CheckIcon: React.FC<{className?: string}> = ({className}) => (
 );
 
 
-const ImageDisplay: React.FC<ImageDisplayProps> = ({ image, text, isLoading, error }) => {
+const ImageDisplay: React.FC<ImageDisplayProps> = ({ image, text, isLoading, error, onResetApiKey }) => {
     const [isCopied, setIsCopied] = React.useState(false);
 
     const handleCopy = (content: string) => {
@@ -74,10 +74,21 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ image, text, isLoading, err
             return <Spinner />;
         }
         if (error) {
+            const isQuotaError = error.startsWith('QUOTA_ERROR:');
+            const displayError = isQuotaError ? error.replace('QUOTA_ERROR:', '') : error;
+            
             return (
                  <div className="text-center bg-error-red-bg border border-error-red/50 p-6 rounded-lg max-w-xl mx-auto">
                     <h2 className="text-xl font-bold text-error-red">Terjadi Kesalahan</h2>
-                    <p className="mt-2 text-error-red/80 font-mono">{error}</p>
+                    <p className="mt-2 text-error-red/80 font-mono">{displayError}</p>
+                    {isQuotaError && (
+                        <button
+                            onClick={onResetApiKey}
+                            className="mt-6 w-full max-w-xs justify-center bg-accent-blue hover:bg-accent-blue-hover text-background font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-black/20 hover:shadow-glow-blue"
+                        >
+                            Ganti Kunci API
+                        </button>
+                    )}
                 </div>
             );
         }
