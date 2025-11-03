@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
-// FIX: Defined an `AIStudio` interface to ensure type consistency across property declarations for `window.aistudio`.
-// This resolves the error about subsequent property declarations needing the same type.
-interface AIStudio {
-    hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<void>;
-}
-
+// FIX: Moved the `AIStudio` interface declaration inside the `declare global` block.
+// This makes the `AIStudio` type global, resolving the "Subsequent property declarations must have the same type" error
+// that can occur when multiple modules declare types for the same global property.
 declare global {
+    interface AIStudio {
+        hasSelectedApiKey: () => Promise<boolean>;
+        openSelectKey: () => Promise<void>;
+    }
+
     interface Window {
         aistudio?: AIStudio;
     }

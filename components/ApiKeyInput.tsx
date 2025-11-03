@@ -1,0 +1,61 @@
+import React, { useState } from 'react';
+
+interface ApiKeyInputProps {
+  onKeyProvided: () => void;
+}
+
+const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onKeyProvided }) => {
+  const [apiKey, setApiKey] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!apiKey.trim()) return;
+    sessionStorage.setItem('gemini_api_key', apiKey.trim());
+    onKeyProvided();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-md bg-surface p-8 rounded-2xl shadow-lg border border-border-color shadow-black/30">
+        <div className="text-center">
+            <h1 className="text-2xl font-semibold text-primary-text">
+                Masukkan Kunci API Gemini Anda
+            </h1>
+            <p className="text-secondary-text mt-4 text-sm">
+                Aplikasi ini membutuhkan kunci API Google Gemini untuk berfungsi. Kunci Anda disimpan sementara di browser Anda untuk sesi ini dan tidak pernah dibagikan.
+            </p>
+             <p className="text-secondary-text mt-3 text-xs">
+                Dapatkan kunci API Anda dari <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">Google AI Studio</a>.
+            </p>
+        </div>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <div>
+            <label htmlFor="api-key" className="sr-only">Google Gemini API Key</label>
+            <input
+              id="api-key"
+              name="api-key"
+              type="password"
+              autoComplete="off"
+              required
+              autoFocus
+              className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-border-color bg-background placeholder-secondary-text/70 text-primary-text focus:outline-none focus:ring-1 focus:ring-accent-blue focus:border-accent-blue sm:text-sm"
+              placeholder="Kunci API Anda"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-background bg-accent-blue hover:bg-accent-blue-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-accent-blue transition-all shadow-lg shadow-black/20"
+            >
+              Simpan & Lanjutkan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ApiKeyInput;

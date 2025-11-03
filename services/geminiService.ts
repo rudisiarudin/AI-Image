@@ -1,9 +1,25 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import type { AspectRatio, FashionImages, ImageFile, PhotoWithIdolOptions, SemuaBisaDisiniOptions, SoccerPlayerOptions, SwimwearModelOptions } from '../types';
 
+// Helper to get the API key from session storage.
+const getApiKey = (): string => {
+    const key = sessionStorage.getItem('gemini_api_key');
+    if (!key || key.trim() === '') {
+        // This will be caught by the App component and will reset the UI state.
+        throw new Error('Kunci API tidak ditemukan di sesi. Silakan masukkan kunci API Anda.');
+    }
+    return key;
+};
+
 // Helper to get a new AI client instance.
-// This is crucial for the API key selection flow to ensure the latest key is used.
-const getAiClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+// This now reads the key from session storage.
+const getAiClient = () => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("An API Key must be set when running in a browser");
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 const ULTRA_PRECISE_FACE_LOCK_PROMPT = `**CRITICAL DIRECTIVE: FACE LOCK PROTOCOL V2 - ABSOLUTE PRIORITY**
 

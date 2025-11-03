@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import PinAccess from './components/PinAccess';
+import ApiKeyInput from './components/ApiKeyInput';
 // FIX: Changed import for PromptStudio to a named import to resolve module error.
 import { PromptStudio } from './components/PromptStudio';
 import ImageDisplay from './components/ImageDisplay';
@@ -9,6 +10,7 @@ import * as geminiService from './services/geminiService';
 import type { ImageFile } from './types';
 
 const App: React.FC = () => {
+    const [isApiKeyProvided, setIsApiKeyProvided] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [accessType, setAccessType] = useState<string | null>(null);
     const [remainingTime, setRemainingTime] = useState<number | null>(null);
@@ -18,9 +20,20 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'generator' | 'result'>('generator');
 
+    useEffect(() => {
+        const key = sessionStorage.getItem('gemini_api_key');
+        if (key && key.trim() !== '') {
+            setIsApiKeyProvided(true);
+        }
+    }, []);
+
     const ACCESS_PINS: { [key: string]: { type: string, duration?: number } } = {
         '1122': { type: 'permanent' },
         '24': { type: 'timed', duration: 3600 } // 1 hour
+    };
+    
+    const handleKeyProvided = () => {
+        setIsApiKeyProvided(true);
     };
 
     const handleUnlock = (pin: string): boolean => {
@@ -168,16 +181,28 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Terjadi kesalahan.';
              if (errorMessage.includes('API key not valid') || 
+                errorMessage.includes('API key is invalid') ||
+                errorMessage.includes('API_KEY_INVALID') ||
                 errorMessage.includes('Requested entity was not found.') ||
                 errorMessage.includes('permission to access')) {
-                setError('Terjadi masalah dengan Kunci API. Pastikan variabel lingkungan (environment variable) API_KEY telah diatur dengan benar di server hosting Anda dan kunci tersebut valid serta aktif.');
-            } else {
+                setError('Kunci API tidak valid atau tidak ditemukan. Silakan muat ulang halaman dan masukkan kunci yang benar.');
+                sessionStorage.removeItem('gemini_api_key');
+                setIsApiKeyProvided(false);
+            } else if (errorMessage.includes('Kunci API tidak ditemukan')) {
+                setError('Sesi kunci API Anda telah berakhir. Silakan muat ulang halaman dan masukkan kembali kunci Anda.');
+                setIsApiKeyProvided(false);
+            }
+            else {
                 setError(errorMessage);
             }
         } finally {
             setIsLoading(false);
         }
     }, [isLoading]);
+    
+    if (!isApiKeyProvided) {
+        return <ApiKeyInput onKeyProvided={handleKeyProvided} />;
+    }
 
     if (!isAuthenticated) {
         return <PinAccess onUnlock={handleUnlock} />;
