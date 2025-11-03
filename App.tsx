@@ -14,6 +14,11 @@ declare global {
   }
 }
 
+// PENTING: Ganti placeholder ini dengan Google Client ID Anda yang sebenarnya.
+// Anda bisa mendapatkannya dari Google Cloud Console.
+const GOOGLE_CLIENT_ID = '757026754736-9ar63shod2u140c5046m1d32sgj16jbv.apps.googleusercontent.com';
+
+
 const App: React.FC = () => {
     const [googleUser, setGoogleUser] = useState<any | null>(null);
     const [isGsiLoaded, setIsGsiLoaded] = useState(false);
@@ -78,9 +83,24 @@ const App: React.FC = () => {
     
     useEffect(() => {
         if (isGsiLoaded && !googleUser) {
+            // Tambahkan pengecekan di sini
+            if (GOOGLE_CLIENT_ID.startsWith('MASUKKAN_GOOGLE_CLIENT_ID')) {
+                setError(
+                    'Konfigurasi Belum Selesai: Anda harus mengganti placeholder GOOGLE_CLIENT_ID di file App.tsx dengan Client ID Anda yang valid dari Google Cloud Console.'
+                );
+                // Jangan render tombol jika ID tidak valid
+                const googleButtonContainer = document.getElementById('google-signin-button');
+                if (googleButtonContainer) {
+                    googleButtonContainer.innerHTML = ''; // Hapus tombol yang mungkin sudah ada
+                }
+                return;
+            }
+            
+            // Hapus error jika konfigurasi sudah benar
+            setError(null);
+
             window.google.accounts.id.initialize({
-                // PENTING: Ganti dengan Google Client ID Anda yang sebenarnya
-                client_id: 'MASUKKAN_GOOGLE_CLIENT_ID_ANDA_DISINI.apps.googleusercontent.com',
+                client_id: GOOGLE_CLIENT_ID,
                 callback: handleCredentialResponse,
             });
             
@@ -262,8 +282,12 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
                 <div className="mt-8 flex justify-center">
                   <div id="google-signin-button"></div>
                 </div>
-                {!isGsiLoaded && <p className="text-center text-secondary-text text-xs mt-4">Memuat tombol login...</p>}
-                {error && <p className="text-error-red text-sm text-center mt-4">{error}</p>}
+                {!isGsiLoaded && !error && <p className="text-center text-secondary-text text-xs mt-4">Memuat tombol login...</p>}
+                {error && (
+                    <div className="bg-error-red-bg border border-error-red/50 p-3 rounded-lg mt-4">
+                        <p className="text-error-red text-xs text-center font-semibold">{error}</p>
+                    </div>
+                )}
               </div>
             </div>
         );
