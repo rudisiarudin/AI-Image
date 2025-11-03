@@ -191,6 +191,10 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
             } else if (errorMessage.includes('Kunci API tidak ditemukan')) {
                 setError('Sesi kunci API Anda telah berakhir. Silakan muat ulang halaman dan masukkan kembali kunci Anda.');
                 setIsApiKeyProvided(false);
+            } else if (errorMessage.includes('Batas penggunaan API telah tercapai')) {
+                setError('Batas penggunaan API untuk kunci ini telah tercapai. Silakan masukkan kunci API lain atau coba lagi nanti.');
+                sessionStorage.removeItem('gemini_api_key');
+                setIsApiKeyProvided(false);
             }
             else {
                 setError(errorMessage);
@@ -201,6 +205,7 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
     }, [isLoading]);
     
     if (!isApiKeyProvided) {
+        // Pass the error to the ApiKeyInput component to display, if it exists
         return <ApiKeyInput onKeyProvided={handleKeyProvided} />;
     }
 
