@@ -51,7 +51,7 @@ export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
                 throw new Error("Kunci API yang Anda masukkan tidak valid. Silakan periksa kembali.");
             }
             if (msg.includes('resource_exhausted') || msg.includes('429') || msg.includes('quota')) {
-                throw new Error("Verifikasi gagal: Batas penggunaan untuk kunci API yang baru Anda masukkan ini telah tercapai. Coba kunci lain.");
+                throw new Error("Verifikasi gagal: Batas penggunaan untuk kunci API ini telah tercapai. Kunci gratis seringkali memiliki batasan, coba kunci lain.");
             }
         }
         // For other errors (network, etc.)

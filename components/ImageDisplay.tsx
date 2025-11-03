@@ -82,12 +82,17 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ image, text, isLoading, err
                     <h2 className="text-xl font-bold text-error-red">Terjadi Kesalahan</h2>
                     <p className="mt-2 text-error-red/80 font-mono">{displayError}</p>
                     {isQuotaError && (
-                        <button
-                            onClick={onResetApiKey}
-                            className="mt-6 w-full max-w-xs justify-center bg-accent-blue hover:bg-accent-blue-hover text-background font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-black/20 hover:shadow-glow-blue"
-                        >
-                            Ganti Kunci API
-                        </button>
+                        <div className="mt-6 flex flex-col items-center gap-4">
+                            <button
+                                onClick={onResetApiKey}
+                                className="w-full max-w-xs justify-center bg-accent-blue hover:bg-accent-blue-hover text-background font-bold py-3 px-4 rounded-lg transition-all shadow-lg shadow-black/20 hover:shadow-glow-blue"
+                            >
+                                Ganti Kunci API
+                            </button>
+                            <p className="text-xs text-secondary-text">
+                                atau <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">dapatkan kunci baru dari Google AI Studio</a>.
+                            </p>
+                        </div>
                     )}
                 </div>
             );

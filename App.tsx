@@ -259,7 +259,7 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
             } else if (lowerCaseError.includes('kunci api tidak ditemukan')) {
                  setError('QUOTA_ERROR:Sesi kunci API Anda telah berakhir. Silakan masukkan kembali kunci Anda.');
             } else if (lowerCaseError.includes('batas penggunaan') || lowerCaseError.includes('quota')) {
-                setError('QUOTA_ERROR:Batas penggunaan API untuk kunci ini telah tercapai. Silakan ganti dengan kunci API yang lain.');
+                setError('QUOTA_ERROR:Batas penggunaan API untuk kunci ini telah tercapai. Kunci gratis memiliki batasan penggunaan. Silakan ganti dengan kunci API yang lain.');
             }
             else {
                 setError(errorMessage);
@@ -294,7 +294,7 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
     }
 
     if (!isApiKeyProvided) {
-        return <ApiKeyInput onKeyProvided={handleKeyProvided} />;
+        return <ApiKeyInput onKeyProvided={handleKeyProvided} googleUser={googleUser} />;
     }
 
     return (

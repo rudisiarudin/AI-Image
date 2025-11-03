@@ -3,9 +3,10 @@ import { verifyApiKey } from '../services/geminiService';
 
 interface ApiKeyInputProps {
   onKeyProvided: () => void;
+  googleUser: any | null;
 }
 
-const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onKeyProvided }) => {
+const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onKeyProvided, googleUser }) => {
   const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,11 +40,16 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onKeyProvided }) => {
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="w-full max-w-md bg-surface p-8 rounded-2xl shadow-lg border border-border-color shadow-black/30">
         <div className="text-center">
-            <h1 className="text-2xl font-semibold text-primary-text">
-                Masukkan Kunci API Gemini Anda
-            </h1>
-            <p className="text-secondary-text mt-4 text-sm">
-                Aplikasi ini membutuhkan kunci API Google Gemini untuk berfungsi. Kunci Anda akan diverifikasi dan disimpan di browser Anda untuk penggunaan di masa mendatang.
+            {googleUser && (
+                <div className="flex flex-col items-center mb-6">
+                    <img src={googleUser.picture} alt="User profile" className="w-16 h-16 rounded-full border-2 border-border-color mb-3"/>
+                    <h1 className="text-xl font-semibold text-primary-text">
+                        Satu langkah lagi, <span className="text-accent-blue">{googleUser.name.split(' ')[0]}</span>!
+                    </h1>
+                </div>
+            )}
+            <p className="text-secondary-text mt-2 text-sm">
+                Untuk melanjutkan, silakan masukkan kunci API Google Gemini Anda. Ini diperlukan untuk mengakses model AI dan merupakan pengaturan satu kali.
             </p>
              <p className="text-secondary-text mt-3 text-xs">
                 Dapatkan kunci API Anda dari <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">Google AI Studio</a>.
