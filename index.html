@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full overflow-hidden">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IT Palugada - AI Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              // New Google AI Studio-inspired theme
+              'background': '#131314',      // Main page background
+              'surface': '#1e1f20',         // Card, input, modal background
+              'surface-2': '#282a2d',       // Lighter surface for hover, nested elements
+              'primary-text': '#e8eaed',    // Primary text color (off-white)
+              'secondary-text': '#9aa0a6',  // Secondary text color (gray)
+              'accent-blue': '#8ab4f8',      // Main accent for buttons, links, active states
+              'accent-blue-hover': '#9ac0fa',
+              'border-color': '#3c4043',    // Borders for inputs, cards
+              'error-red': '#f28b82',        // For error messages
+              'error-red-bg': 'rgba(242, 139, 130, 0.1)', // Error message background
+            },
+            boxShadow: {
+              'glow-blue': '0 0 15px rgba(138, 180, 248, 0.3)',
+            }
+          },
+        }
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1"
+  }
+}
+</script>
+</head>
+<body class="bg-background text-primary-text font-sans h-full overflow-hidden">
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
