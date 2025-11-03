@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
-import ApiKeySelector from './components/ApiKeySelector';
 import PinAccess from './components/PinAccess';
 // FIX: Changed import for PromptStudio to a named import to resolve module error.
 import { PromptStudio } from './components/PromptStudio';
@@ -10,7 +9,6 @@ import * as geminiService from './services/geminiService';
 import type { ImageFile } from './types';
 
 const App: React.FC = () => {
-    const [isApiKeyReady, setIsApiKeyReady] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [accessType, setAccessType] = useState<string | null>(null);
     const [remainingTime, setRemainingTime] = useState<number | null>(null);
@@ -169,9 +167,10 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
 
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Terjadi kesalahan.';
-            if (errorMessage.includes('Requested entity was not found.')) {
-                setError('API Key tidak valid atau telah kedaluwarsa. Silakan pilih kunci baru.');
-                setIsApiKeyReady(false);
+             if (errorMessage.includes('API key not valid') || 
+                errorMessage.includes('Requested entity was not found.') ||
+                errorMessage.includes('permission to access')) {
+                setError('Terjadi masalah dengan Kunci API. Pastikan variabel lingkungan (environment variable) API_KEY telah diatur dengan benar di server hosting Anda dan kunci tersebut valid serta aktif.');
             } else {
                 setError(errorMessage);
             }
@@ -179,11 +178,6 @@ Anda adalah spesialis restorasi gambar digital kelas dunia. Tugas tunggal Anda a
             setIsLoading(false);
         }
     }, [isLoading]);
-
-
-    if (!isApiKeyReady) {
-        return <ApiKeySelector onKeySelected={() => setIsApiKeyReady(true)} />;
-    }
 
     if (!isAuthenticated) {
         return <PinAccess onUnlock={handleUnlock} />;
